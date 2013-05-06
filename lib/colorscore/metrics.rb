@@ -117,6 +117,44 @@ module Colorscore
       [l, a, b]
     end
 
+    def self.rgb_to_ycrcb(color)
+      r, g, b = color.red, color.green, color.blue
+
+      y  = (0.257*r) + (0.504*g) + (0.098*b) + 16
+      cr = (0.439*r) - (0.368*g) - (0.071*b) + 128
+      cb = -(0.148*r)- (0.291*g) + (0.439*b) + 128
+
+      [y, cr, cb]
+    end
+
+    def self.rgb_to_hsi(color)
+      r, g, b = color.red, color.green, color.blue
+      i = (r+g+b)/3.0
+
+      if r == g && g == b
+        return [0, 0, 1]
+      end
+
+      r, g, b = r/i, g/i, b/i
+      w = 0.5*(r-g+r-b) / Math.sqrt((r-g)*(r-g)+(r-b)*(g-b))
+
+      if w > 1
+        w = 1
+      elsif w < -1
+        w = -1
+      end
+
+      h = Math.acos(w)
+
+      if b > g
+        h = 2*Math::PI - h
+      end
+
+      s = 1-3*[r,g,b].min
+
+      [h,s,i]
+    end
+
     def self.scale(number, from_range, to_range=0..1, clamp=true)
       if clamp && number <= from_range.begin
         position = 0
@@ -127,6 +165,71 @@ module Colorscore
       end
 
       position * (to_range.end - to_range.begin) + to_range.begin
+    end
+
+    def self.is_skin_rgb(color)
+      r, g, b = color.red, color.green, color.blue
+
+      if r < 95 || g < 40 || b < 20 || r < g || r < b
+        return false
+      end
+
+      d = r-g
+
+      if -15 < d && d < 15
+        return false
+      end
+
+      max = [r,g,b].max
+      min = [r,g,b].min
+
+      if (max-min) < 15
+        return false
+      end
+
+      return true
+    end
+
+    def self.is_skin_ycrcb(color)
+      y, cr, cb = rgb_to_ycrcb(color)
+ 
+      if cr >= (1.5862*cb) + 20 
+        return false
+      end
+      if cr <= (0.3448*cb) + 76.2069
+        return false
+      end
+      if cr <= (-4.5652*cb) + 234.5652
+        return false
+      end
+      if cr >= (-1.15*cb) + 301.75
+        return false
+      end
+      if cr >= (-2.2857*cb) + 432.85
+        return false
+      end
+
+      return true
+    end
+
+    def self.is_skin_hsi(color)
+      h, s, i = rgb_to_hsi(color)
+      if h < 25 || h > 230
+        return true
+      end
+
+      return false
+    end
+
+    def self.skin_detect(color)
+      color = color.to_rgb
+
+      if is_skin_rgb(color) && is_skin_ycrcb(color) && is_skin_hsi(color)
+        return true
+      end
+
+      return false
+
     end
 
     def self.radians(degrees); degrees * Math::PI / 180; end
