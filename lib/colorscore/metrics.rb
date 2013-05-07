@@ -223,11 +223,8 @@ module Colorscore
 
     def self.skin_detect(color)
       color = color.to_rgb
-      result_list = []
-      result_list << true if is_skin_rgb(color)
-      result_list << true if is_skin_ycrcb(color)
-      result_list << true if is_skin_hsi(color)
-      if result_list.length >= 2
+
+      if is_skin_rgb(color) && is_skin_ycrcb(color) && is_skin_hsi(color)
         return true
       end
 
